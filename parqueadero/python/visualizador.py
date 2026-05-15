@@ -35,7 +35,12 @@ class Visualizador:
             lbl_placa = tk.Label(cell_frame, text="LIBRE", font=("Arial", 9))
             lbl_placa.pack()
             
-            self.celdas_widgets[i] = {"frame": cell_frame, "placa": lbl_placa}
+            # Guardamos referencias para actualizar luego
+            self.celdas_widgets[i] = {
+                "frame": cell_frame, 
+                "placa_label": lbl_placa,
+                "num_label": lbl_num
+            }
 
         # --- PARTE INFERIOR: TABLA DE HISTORIAL ---
         frame_historial = tk.LabelFrame(self.root, text="Historial de Eventos", padx=10, pady=10, bg="#f0f0f0", font=("Arial", 12, "bold"))
@@ -62,7 +67,7 @@ class Visualizador:
         scrollbar.pack(side="right", fill="y")
 
     def agregar_evento(self, placa, hora, celda, estado):
-        # Insertar al principio de la tabla
+        # 1. Insertar en la tabla de historial
         self.tabla.insert("", 0, values=(hora, placa, celda, estado))
         
         # Limitar a 50 eventos
@@ -70,11 +75,29 @@ class Visualizador:
             ultimo = self.tabla.get_children()[-1]
             self.tabla.delete(ultimo)
             
-        # Actualizar la grilla visual al recibir un evento
-        self.actualizar_grilla()
+        # 2. Actualizar la celda individual directamente usando los datos del mensaje
+        try:
+            # Convertir numero de celda (1-30) a indice (0-29)
+            idx = int(celda) - 1
+            
+            if 0 <= idx < 30:
+                widget = self.celdas_widgets[idx]
+                
+                if estado == "ENTRADA":
+                    # Poner en ROJO y mostrar placa
+                    widget["frame"].configure(bg="#ff4444")
+                    widget["placa_label"].configure(text=placa, bg="#ff4444", fg="white", font=("Arial", 9, "bold"))
+                    widget["num_label"].configure(bg="#ff4444", fg="white")
+                else:
+                    # Poner en VERDE y mostrar LIBRE
+                    widget["frame"].configure(bg="#2ecc71")
+                    widget["placa_label"].configure(text="LIBRE", bg="#2ecc71", fg="white", font=("Arial", 9))
+                    widget["num_label"].configure(bg="#2ecc71", fg="white")
+        except ValueError:
+            pass # Celda invalida (ej: "-1" si esta lleno)
 
     def actualizar_grilla(self):
-        # Obtener estado de la DLL: lista de 30 strings ("1" o "0")
+        """Sincroniza toda la grilla con el estado real de la DLL (usado al inicio)"""
         estados = self.bridge.obtener_estado_celdas()
         
         for i, estado_bit in enumerate(estados):
@@ -82,8 +105,10 @@ class Visualizador:
             
             widget = self.celdas_widgets[i]
             if estado_bit == "1":
-                widget["frame"].configure(bg="#ffcccc") # Rojo suave
-                widget["placa"].configure(text="OCUPADA", bg="#ffcccc", fg="#cc0000")
+                widget["frame"].configure(bg="#ff4444")
+                widget["placa_label"].configure(text="OCUPADA", bg="#ff4444", fg="white")
+                widget["num_label"].configure(bg="#ff4444", fg="white")
             else:
-                widget["frame"].configure(bg="#ccffcc") # Verde suave
-                widget["placa"].configure(text="LIBRE", bg="#ccffcc", fg="#006600")
+                widget["frame"].configure(bg="#2ecc71")
+                widget["placa_label"].configure(text="LIBRE", bg="#2ecc71", fg="white")
+                widget["num_label"].configure(bg="#2ecc71", fg="white")
