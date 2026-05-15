@@ -1,7 +1,10 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "parqueadero.h"
 #include <ctime>
 #include <sstream>
 #include <iomanip>
+#include <vector>
+#include <cstdlib>
 
 using namespace std;
 
@@ -50,25 +53,35 @@ bool Parqueadero::registrarPlaca(string placa, string& celda, string& hora) {
         return false;  // Fue una SALIDA
     }
 
-    // Caso 2: La placa NO existe -> INGRESO (buscar primera celda libre)
+    // Caso 2: La placa NO existe -> INGRESO (ELEGIR CELDA AL AZAR)
+    vector<int> celdasLibres;
     for (int i = 0; i < TOTAL_CELDAS; i++) {
         if (!celdas[i].ocupada) {
-            string horaActual = obtenerHoraActual();
-
-            // Ocupar la celda
-            celdas[i].ocupada = true;
-            celdas[i].placa = placa;
-            celdas[i].horaIngreso = horaActual;
-
-            // Registrar en el mapa
-            placaACelda[placa] = i;
-
-            // Devolver info
-            celda = to_string(i + 1);  // Celda 1-30
-            hora = horaActual;
-
-            return true;  // Fue un INGRESO
+            celdasLibres.push_back(i);
         }
+    }
+
+    // Si hay celdas libres disponibles
+    if (!celdasLibres.empty()) {
+        // Elegir un indice al azar del vector de celdas libres
+        int r = rand() % celdasLibres.size();
+        int indiceElegido = celdasLibres[r];
+
+        string horaActual = obtenerHoraActual();
+
+        // Ocupar la celda
+        celdas[indiceElegido].ocupada = true;
+        celdas[indiceElegido].placa = placa;
+        celdas[indiceElegido].horaIngreso = horaActual;
+
+        // Registrar en el mapa
+        placaACelda[placa] = indiceElegido;
+
+        // Devolver info
+        celda = to_string(indiceElegido + 1);  // Celda 1-30
+        hora = horaActual;
+
+        return true;  // Fue un INGRESO
     }
 
     // Parqueadero lleno
