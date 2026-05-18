@@ -540,3 +540,4 @@ class Visualizador:
                 widget["frame"].configure(bg="#2ecc71")
                 widget["placa_label"].configure(text="LIBRE", bg="#2ecc71", fg="white")
                 widget["num_label"].configure(bg="#2ecc71", fg="white")
+
