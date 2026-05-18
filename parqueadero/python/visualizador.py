@@ -37,6 +37,9 @@ class Visualizador:
         
         # ID del evento pendiente (para evitar duplicados)
         self.evento_pendiente_id = None
+
+        # Control de captura manual
+        self.esperando_captura = False
         
         self._setup_ui()
         self.actualizar_grilla()
@@ -54,6 +57,14 @@ class Visualizador:
                              bg="#2c3e50", fg="white")
         lbl_titulo.pack(side="left", padx=20, pady=10)
         
+        btn_captura = tk.Button(
+            frame_controles,
+            text="Iniciar Captura",
+            command=self._iniciar_captura_manual
+        )
+        btn_captura.pack(side="left", padx=5, pady=10)
+
+
         # Botones de modo
         btn_aleatorio = tk.Button(frame_controles, text="Aleatorio", width=12, bg="#3498db", 
                                  fg="white", font=("Arial", 10, "bold"), 
@@ -153,6 +164,30 @@ class Visualizador:
         self.canvas_grafico.pack(fill="both", expand=True)
         self.dibujar_grafico()
     
+    def _iniciar_captura_manual(self):
+        """Activa una única detección de placa"""
+        
+        if self.modo_actual != "camara":
+            messagebox.showwarning(
+                "Aviso",
+                "Debes activar el modo cámara primero"
+            )
+            return
+
+        # LIMPIAR HISTÓRICO PARA PODER LEER LA MISMA PLACA OTRA VEZ
+        if self.gestor_camara:
+            self.gestor_camara.limpiar_historico_placas()
+
+        self.esperando_captura = True
+        
+        print("[VISUALIZADOR] Esperando captura de placa...")
+        
+        messagebox.showinfo(
+            "Captura",
+            "Apunta la cámara hacia la placa"
+        )
+
+
     def _cambiar_modo_aleatorio(self):
         """Cambia al modo aleatorio"""
         if self.modo_actual == "aleatorio":
@@ -229,11 +264,16 @@ class Visualizador:
         self.root.after(100, self._actualizar_vista_camara)
     
     def manejar_placa_detectada(self, placa, frame):
+        if not self.esperando_captura:
+            return
+
         """Maneja una placa detectada por la cámara"""
         print(f"[VISUALIZADOR] Placa detectada: {placa}")
         
         # Guardar frame capturado
         self.frame_capturado_actual = frame.copy()
+
+        self.esperando_captura = False
         
         # Mostrar diálogo para elegir entrada/salida
         root_dialog = tk.Tk()
